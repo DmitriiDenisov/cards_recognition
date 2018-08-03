@@ -1,5 +1,7 @@
 import os
 
+import tensorflow as tf
+import keras
 from keras.applications import vgg16, inception_v3, resnet50, mobilenet
 from keras.preprocessing import image
 from keras.layers.core import Dropout, Activation, Reshape
@@ -7,8 +9,32 @@ from keras.layers import Conv2D
 from keras.models import Model
 from keras import optimizers
 from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.layers import DepthwiseConv2D
+from keras_applications.mobilenet import relu6
+from keras.utils.generic_utils import CustomObjectScope
 
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
+
+TRAIN_FROM_ZERO = False
+
+tf.summary.FileWriterCache.clear()
+
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+temp_path_run = os.path.join(PROJECT_PATH, 'logs', 'run')
+temp_path = temp_path_run + '1'
+i = 2
+while os.path.exists(temp_path):
+    temp_path = temp_path_run + str(i)
+    i += 1
+log_run_dir = temp_path
+
+tbCallBack = TensorBoard(log_dir=log_run_dir, histogram_freq=0, batch_size=32, write_graph=True,
+                            write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None,
+                            embeddings_metadata=None, embeddings_data=None)
+
+sess = tf.InteractiveSession()
+tf.summary.FileWriter(log_run_dir, sess.graph)
+
 
 NUM_CLASSES = 2663
 
@@ -34,18 +60,22 @@ train_datagen= image.ImageDataGenerator(
         rescale=1./255,
         shear_range=0.2,
         zoom_range=0.2,
-        horizontal_flip=True)
+        horizontal_flip=True,
+        rotation_range=90,
+        zca_whitening=True)
 valid_datagen= image.ImageDataGenerator(
         rescale=1./255,
         shear_range=0.2,
         zoom_range=0.2,
-        horizontal_flip=True)
+        horizontal_flip=True,
+        rotation_range=90,
+        zca_whitening=True)
 
 train_generator = train_datagen.flow_from_directory(
     directory=r"../resource/train",
     target_size=(224, 224),
     color_mode="rgb",
-    batch_size=64,
+    batch_size=8,
     class_mode="categorical",
     shuffle=True,
     seed=42
@@ -54,16 +84,19 @@ valid_generator = valid_datagen.flow_from_directory(
     directory=r"../resource/test",
     target_size=(224, 224),
     color_mode="rgb",
-    batch_size=64,
+    batch_size=8,
     class_mode="categorical",
     shuffle=True,
     seed=42
 )
 
 
-# sgd = optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
-adam = optimizers.Adam(lr=0.1)# , decay=1e-6, momentum=0.9, nesterov=True)
-mod_model.compile(optimizer=adam,
+if not TRAIN_FROM_ZERO:
+    with CustomObjectScope({'relu6': relu6, 'DepthwiseConv2D': DepthwiseConv2D}):
+        mod_model = keras.models.load_model('my_model_batch8.h5')
+
+sgd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+mod_model.compile(optimizer=sgd,
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
@@ -71,9 +104,7 @@ mod_model.compile(optimizer=adam,
 STEP_SIZE_TRAIN = train_generator.n//train_generator.batch_size
 STEP_SIZE_VALID = valid_generator.n//valid_generator.batch_size
 
-PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-tbCallBack = TensorBoard(log_dir=os.path.join(PROJECT_PATH, 'logs'), histogram_freq=0, write_graph=True, write_images=True)
-checkpointer = ModelCheckpoint('my_model.h5', monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
+checkpointer = ModelCheckpoint('my_model_batch8_zca.h5', monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 
 
 history = mod_model.fit_generator(generator=train_generator,
@@ -85,20 +116,23 @@ history = mod_model.fit_generator(generator=train_generator,
 )
 
 
-history.model.save('my_model.h5')
+saver = tf.train.Saver()
+saver.save(sess, log_run_dir)
 
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-# summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.savefig('foo.png')
+history.model.save('my_model_batch8_zca.h5')
+
+# plt.plot(history.history['acc'])
+# plt.plot(history.history['val_acc'])
+# plt.title('model accuracy')
+# plt.ylabel('accuracy')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'test'], loc='upper left')
+# plt.show()
+# # summarize history for loss
+# plt.plot(history.history['loss'])
+# plt.plot(history.history['val_loss'])
+# plt.title('model loss')
+# plt.ylabel('loss')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'test'], loc='upper left')
+# plt.savefig('foo.png')
