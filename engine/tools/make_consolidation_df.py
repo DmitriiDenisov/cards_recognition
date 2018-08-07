@@ -12,17 +12,20 @@ PATH_FILES_NAMES = os.path.join(DATA_PATH, 'filenames.txt')
 PATH_TEST_ANSWERS = os.path.join(DATA_PATH, 'true_answers.xlsx')
 PATH_CLASSES_IN_SET = os.path.join(DATA_PATH, 'classes_in_set.xlsx')
 
-def consolidation_df_for_predictions():
-    with open(PATH_FILES_NAMES) as f:
+def consolidation_df_for_predictions(model, result_path, support_files_path):
+    with open(os.path.join(support_files_path, 'cardnames.txt')) as f:
         content = f.readlines()
     filenames = content[0].split(' ')
 
-    best_pred, best_thresh = select_best_threshold([0.4, 0.45, 0.5], filenames, PATH_PREDICTIONS,
-                                                   PATH_TEST_ANSWERS, PATH_LABELS, PATH_CLASSES_IN_SET)
+    with open(os.path.join(result_path, 'best_threshold.txt'), 'r') as f:
+        best_thresh = float(f.readline())
+    # best_pred, best_thresh = select_best_threshold([0.4, 0.45, 0.5], filenames, PATH_PREDICTIONS,
+    #                                                PATH_TEST_ANSWERS, PATH_LABELS, PATH_CLASSES_IN_SET)
     #true_answers = pd.read_excel(PATH_TEST_ANSWERS).set_index('card_id')
-    labels = pd.read_csv(PATH_LABELS)
+    labels = pd.read_csv(os.path.join(support_files_path, 'labels.csv'))
     labels = dict(zip(labels['class_index'], labels['class_name']))
-    pred = pd.read_csv(PATH_PREDICTIONS, header=None)
+    labels[-1] = 'rejected'
+    pred = pd.read_csv(os.path.join(result_path, 'predictions_with_all_probabilities_{}.csv'.format(model[:-3])), header=None)
     if isinstance(pred, pd.DataFrame):
         pred = pred.values
 
@@ -40,9 +43,10 @@ def consolidation_df_for_predictions():
     predictions_with_thresh = [labels[k] for k in predicted_class_indices]
     df['Pred_class_with_thresh_' + str(best_thresh)] = predictions_with_thresh
 
-    writer = ExcelWriter(os.path.join(PROJECT_PATH, 'resource\statistics\consolidation_df.xlsx'))
+    writer = ExcelWriter(os.path.join(result_path, 'consolidation_df_{}.xlsx'.format(model[:-3])))
     df.to_excel(writer, 'Sheet1')
     writer.save()
+
 
 def consolidation_df_for_predictions_with_all_metrics():
     with open(PATH_FILES_NAMES) as f:
