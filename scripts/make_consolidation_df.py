@@ -3,13 +3,14 @@ import pandas as pd
 from pandas import ExcelWriter
 from engine.tools.select_best_threshold import select_best_threshold, count_TP_and_FP_for_df
 import os
-PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_PATH = os.path.join(PROJECT_PATH, 'resource', 'data')
 
-PATH_PREDICTIONS = os.path.join(PROJECT_PATH, 'resource', 'data', 'predictions_on_test_data.csv')
-PATH_LABELS = os.path.join(PROJECT_PATH, 'resource', 'data', 'labels.csv')
-PATH_FILES_NAMES = os.path.join(PROJECT_PATH, 'resource', 'data', 'filenames.txt')
-PATH_TEST_ANSWERS = os.path.join(PROJECT_PATH, 'resource', 'data', 'true_answers.xlsx')
-PATH_CLASSES_IN_SET = os.path.join(PROJECT_PATH, 'resource', 'data', 'classes_in_set.xlsx')
+PATH_PREDICTIONS = os.path.join(DATA_PATH, 'predictions_on_test_data.csv')
+PATH_LABELS = os.path.join(DATA_PATH, 'labels.csv')
+PATH_FILES_NAMES = os.path.join(DATA_PATH, 'filenames.txt')
+PATH_TEST_ANSWERS = os.path.join(DATA_PATH, 'true_answers.xlsx')
+PATH_CLASSES_IN_SET = os.path.join(DATA_PATH, 'classes_in_set.xlsx')
 
 def consolidation_df_for_predictions():
     with open(PATH_FILES_NAMES) as f:
@@ -75,7 +76,6 @@ def consolidation_df_for_predictions_with_all_metrics():
 
 
     #Creating score df:
-    check = true_answers['true_type'].unique()
     df_results = pd.DataFrame({'Unique true_type': df['true_type'].unique()})
     num_els_in_test = true_answers['true_type'].value_counts()
     df_results['num_els_in_test'] = num_els_in_test.loc[df_results['Unique true_type']].values

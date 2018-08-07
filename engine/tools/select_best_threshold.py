@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import os
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def count_TP_and_FP_for_df(df):
     """
@@ -67,12 +69,12 @@ def select_best_threshold(threshold_list, filenames, PATH_PREDICTIONS, PATH_TEST
 
 if __name__ == '__main__':
     # DEFENITIONS:
-    PATH_LABELS = '../resource/data/labels.csv'
-    # PATH_TEST_DATA = r"J:\Projects\CardsMobile\data\EAN_13\test"
-    PATH_TEST_ANSWERS = '../resource/data/true_answers.xlsx'
-    PATH_PREDICTIONS = '../resource/data/predictions_on_test_data.csv'
-    PATH_FILES_NAMES = '../resource/data/filenames.txt'
-    PATH_CLASSES_IN_SET = '../resource/data/classes_in_set.xlsx'
+    DATA_PATH = os.path.join(PROJECT_PATH, 'resource', 'data')
+    PATH_LABELS = os.path.join(DATA_PATH, 'labels.csv')
+    PATH_TEST_ANSWERS = os.path.join(DATA_PATH, 'true_answers.xlsx')
+    PATH_PREDICTIONS = os.path.join(DATA_PATH, 'predictions_on_test_data.csv')
+    PATH_FILES_NAMES = os.path.join(DATA_PATH, 'filenames.txt')
+    PATH_CLASSES_IN_SET = os.path.join(DATA_PATH, 'classes_in_set.xlsx')
 
     with open(PATH_FILES_NAMES) as f:
         content = f.readlines()

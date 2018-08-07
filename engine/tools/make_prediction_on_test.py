@@ -5,8 +5,10 @@ from keras.layers import DepthwiseConv2D
 from keras.preprocessing import image
 from keras_applications.mobilenet import relu6
 from keras.utils.generic_utils import CustomObjectScope
+import os
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-PATH_TEST_DATA = '/home/cardsmobile_data/_EAN_13/test'
+PATH_TEST_DATA = '/home/cardsmobile_data/_EAN_13/test' # на сервере
 
 '''
 train_datagen= image.ImageDataGenerator(
@@ -25,7 +27,7 @@ train_generator = train_datagen.flow_from_directory(
 )
 '''
 with CustomObjectScope({'relu6': relu6, 'DepthwiseConv2D': DepthwiseConv2D}):
-    model = keras.models.load_model('../resource/models/my_model_base.h5')
+    model = keras.models.load_model(os.path.join(PROJECT_PATH, 'resource', 'models', 'my_model_base.h5'))
 # model = keras.models.load_model('my_model.h5')
 sgd = optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(optimizer=sgd,
@@ -51,8 +53,7 @@ pred = model.predict_generator(test_generator, verbose=1)
 
 filenames = test_generator.filenames
 filenames = [file[file.find('/') + 1:][:-4] for file in filenames]  # cut .jpg
-with open("../resource/data/filenames.txt", "w") as output:
+with open(os.path.join(PROJECT_PATH, 'resource', 'data', 'filenames.txt'), "w") as output:
     output.write(' '.join(filenames))
 
-
-np.savetxt("../resource/data/predictions_on_test_data.csv", pred, delimiter=",")
+np.savetxt(os.path.join(PROJECT_PATH, 'resource', 'data', 'predictions_on_test_data.csv'), pred, delimiter=",")
