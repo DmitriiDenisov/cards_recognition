@@ -13,8 +13,6 @@ from keras.layers import DepthwiseConv2D
 from keras_applications.mobilenet import relu6
 from keras.utils.generic_utils import CustomObjectScope
 
-# from matplotlib import pyplot as plt
-
 TRAIN_FROM_ZERO = False
 
 tf.summary.FileWriterCache.clear()
@@ -61,21 +59,21 @@ train_datagen= image.ImageDataGenerator(
         shear_range=0.2,
         zoom_range=0.2,
         horizontal_flip=True,
-        rotation_range=90,
-        zca_whitening=True)
+        rotation_range=False,
+        zca_whitening=False)
 valid_datagen= image.ImageDataGenerator(
         rescale=1./255,
         shear_range=0.2,
         zoom_range=0.2,
         horizontal_flip=True,
-        rotation_range=90,
-        zca_whitening=True)
+        rotation_range=0,
+        zca_whitening=False)
 
 train_generator = train_datagen.flow_from_directory(
     directory=r"../resource/train",
     target_size=(224, 224),
     color_mode="rgb",
-    batch_size=8,
+    batch_size=64,
     class_mode="categorical",
     shuffle=True,
     seed=42
@@ -84,7 +82,7 @@ valid_generator = valid_datagen.flow_from_directory(
     directory=r"../resource/test",
     target_size=(224, 224),
     color_mode="rgb",
-    batch_size=8,
+    batch_size=64,
     class_mode="categorical",
     shuffle=True,
     seed=42
@@ -120,19 +118,3 @@ saver = tf.train.Saver()
 saver.save(sess, log_run_dir)
 
 history.model.save('my_model_batch8_zca.h5')
-
-# plt.plot(history.history['acc'])
-# plt.plot(history.history['val_acc'])
-# plt.title('model accuracy')
-# plt.ylabel('accuracy')
-# plt.xlabel('epoch')
-# plt.legend(['train', 'test'], loc='upper left')
-# plt.show()
-# # summarize history for loss
-# plt.plot(history.history['loss'])
-# plt.plot(history.history['val_loss'])
-# plt.title('model loss')
-# plt.ylabel('loss')
-# plt.xlabel('epoch')
-# plt.legend(['train', 'test'], loc='upper left')
-# plt.savefig('foo.png')

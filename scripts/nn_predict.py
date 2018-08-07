@@ -9,7 +9,7 @@ from keras.utils.generic_utils import CustomObjectScope
 
 
 with CustomObjectScope({'relu6': relu6,'DepthwiseConv2D': DepthwiseConv2D}):
-    model = keras.models.load_model('my_model_batch8.h5')
+    model = keras.models.load_model('my_model_batch8_zca.h5')
 #model = keras.models.load_model('my_model.h5')
 sgd = optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(optimizer=sgd,
@@ -57,4 +57,4 @@ predictions = [labels[k] for k in predicted_class_indices]
 filenames = test_generator.filenames
 results = pd.DataFrame({"Filename": filenames,
                         "Predictions": predictions})
-results.to_csv("results_batch8.csv", index=False)
+results.to_csv("results_batch8_zca.csv", index=False)
