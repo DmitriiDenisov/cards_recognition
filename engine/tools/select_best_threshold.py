@@ -31,6 +31,7 @@ def count_TP_and_FP_for_df(df):
 def select_best_threshold(threshold_list, filenames, PATH_PREDICTIONS, PATH_TEST_ANSWERS, PATH_LABELS, PATH_CLASSES_IN_SET):
     labels = pd.read_csv(PATH_LABELS)
     labels = dict(zip(labels['class_index'], labels['class_name']))
+    labels[-1] = 'rejected'
 
     pred = pd.read_csv(PATH_PREDICTIONS, header=None)
     if isinstance(pred, pd.DataFrame):
@@ -65,20 +66,7 @@ def select_best_threshold(threshold_list, filenames, PATH_PREDICTIONS, PATH_TEST
             best_thresh = thresh
             #best_df = df.copy()
 
+    with open(os.path.join(os.path.dirname(PATH_PREDICTIONS), 'best_threshold.txt'), 'w') as f:
+        f.write(str(best_thresh))
+
     return best_pr, best_thresh
-
-if __name__ == '__main__':
-    # DEFENITIONS:
-    DATA_PATH = os.path.join(PROJECT_PATH, 'resource', 'data')
-    PATH_LABELS = os.path.join(DATA_PATH, 'labels.csv')
-    PATH_TEST_ANSWERS = os.path.join(DATA_PATH, 'true_answers.xlsx')
-    PATH_PREDICTIONS = os.path.join(DATA_PATH, 'predictions_on_test_data.csv')
-    PATH_FILES_NAMES = os.path.join(DATA_PATH, 'filenames.txt')
-    PATH_CLASSES_IN_SET = os.path.join(DATA_PATH, 'classes_in_set.xlsx')
-
-    with open(PATH_FILES_NAMES) as f:
-        content = f.readlines()
-    filenames = content[0].split(' ')
-
-    select_best_threshold(np.linspace(0, 1, 21), filenames, PATH_PREDICTIONS, PATH_TEST_ANSWERS,
-                          PATH_LABELS, PATH_CLASSES_IN_SET)

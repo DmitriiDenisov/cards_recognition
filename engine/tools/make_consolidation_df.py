@@ -1,16 +1,11 @@
+import os
+
 import numpy as np
 import pandas as pd
 from pandas import ExcelWriter
-from engine.tools.select_best_threshold import select_best_threshold, count_TP_and_FP_for_df
-import os
-PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_PATH = os.path.join(PROJECT_PATH, 'resource', 'data')
 
-PATH_PREDICTIONS = os.path.join(DATA_PATH, 'predictions_on_test_data.csv')
-PATH_LABELS = os.path.join(DATA_PATH, 'labels.csv')
-PATH_FILES_NAMES = os.path.join(DATA_PATH, 'filenames.txt')
-PATH_TEST_ANSWERS = os.path.join(DATA_PATH, 'true_answers.xlsx')
-PATH_CLASSES_IN_SET = os.path.join(DATA_PATH, 'classes_in_set.xlsx')
+from engine.tools.select_best_threshold import count_TP_and_FP_for_df
+
 
 def consolidation_df_for_predictions(model, result_path, support_files_path):
     with open(os.path.join(support_files_path, 'cardnames.txt')) as f:
@@ -48,19 +43,20 @@ def consolidation_df_for_predictions(model, result_path, support_files_path):
     writer.save()
 
 
-def consolidation_df_for_predictions_with_all_metrics():
-    with open(PATH_FILES_NAMES) as f:
+def consolidation_df_for_predictions_with_all_metrics(model, result_path, support_files_path):
+    with open(os.path.join(support_files_path, 'cardnames.txt')) as f:
         content = f.readlines()
     filenames = content[0].split(' ')
-    true_answers = pd.read_excel(PATH_TEST_ANSWERS).set_index('card_id')
-    classes_in_train_set = pd.read_excel(PATH_CLASSES_IN_SET)['class_name_in_training_set'].values
+    true_answers = pd.read_excel(os.path.join(support_files_path, 'true_answers.xlsx')).set_index('card_id')
+    classes_in_train_set = pd.read_excel(os.path.join(support_files_path, 'classes_in_set.xlsx'))['class_name_in_training_set'].values
     true_answers.loc[~true_answers['true_type'].isin(classes_in_train_set), 'true_type'] = 'rejected'
 
     #A = true_answers.groupby(['true_type'])
 
-    labels = pd.read_csv(PATH_LABELS)
+    labels = pd.read_csv(os.path.join(support_files_path, 'labels.csv'))
     labels = dict(zip(labels['class_index'], labels['class_name']))
-    pred = pd.read_csv(PATH_PREDICTIONS, header=None)
+    labels[-1] = 'rejected'
+    pred = pd.read_csv(os.path.join(result_path, 'predictions_with_all_probabilities_{}.csv'.format(model[:-3])), header=None)
     if isinstance(pred, pd.DataFrame):
         pred = pred.values
 
@@ -102,9 +98,6 @@ def consolidation_df_for_predictions_with_all_metrics():
     df_results.loc[len(df_results)] = scores
 
 
-    writer = ExcelWriter(os.path.join(PROJECT_PATH, 'resource', 'statistics', 'consolidation_df_with_metrics.xlsx'))
+    writer = ExcelWriter(os.path.join(result_path, 'consolidation_df_all_metrics_{}.xlsx'.format(model[:-3])))
     df_results.to_excel(writer, 'Sheet1')
     writer.save()
-
-if __name__ == '__main__':
-    consolidation_df_for_predictions_with_all_metrics()

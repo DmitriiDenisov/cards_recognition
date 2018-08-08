@@ -15,7 +15,7 @@ from engine.tools.filesystem_functions import get_cardname, get_barcode_class
 from engine.tools.make_consolidation_df import consolidation_df_for_predictions
 
 """ Initialize argument parser """
-parser = argparse.ArgumentParser(description='Model training script')
+parser = argparse.ArgumentParser(description='Prediction script')
 parser.add_argument('-m', '--model', action='store', type=str, default='',
                     help='Name of the model that will predict the class of a card.')
 parser.add_argument('-i', '--input_path', action='store', type=str, default='',
