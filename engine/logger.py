@@ -4,9 +4,10 @@ from keras.callbacks import ModelCheckpoint, TensorBoard
 
 
 class TFLogger:
-    def __init__(self, project_path, batch_size):
+    def __init__(self, project_path, model_name, batch_size):
         tf.summary.FileWriterCache.clear()
         self.project_path = project_path
+        self.model_name = model_name[:-3]
         self.batch_size = batch_size
         self.session = tf.InteractiveSession()
         self.log_dir = self._create_run_folder()
@@ -17,10 +18,10 @@ class TFLogger:
             os.mkdir(os.path.join(self.project_path, 'logs'))
 
         temp_path_run = os.path.join(self.project_path, 'logs', 'run')
-        temp_path = temp_path_run + '1'
+        temp_path = temp_path_run + '1' + '_' + self.model_name
         i = 2
         while os.path.exists(temp_path):
-            temp_path = temp_path_run + str(i)
+            temp_path = temp_path_run + str(i) + '_' + self.model_name
             i += 1
         return temp_path
 

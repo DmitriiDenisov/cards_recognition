@@ -4,8 +4,8 @@ import random
 import os
 import numpy as np
 
-DATA_PATH = r'\\rumos0104\Data2\DAI\Projects\CardsMobile\data'
-BARCODE_TYPE = 'CODE_128'
+DATA_PATH = r'/home/cardsmobile_data/'
+BARCODE_TYPE = '_VOICE'
 classes_folders = glob.glob(os.path.join(DATA_PATH, BARCODE_TYPE, 'train_source', '*'))
 
 for idx, folder in enumerate(classes_folders):

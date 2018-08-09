@@ -1,4 +1,5 @@
 import os
+import sys
 import argparse
 
 import keras
@@ -13,6 +14,8 @@ from keras.layers import DepthwiseConv2D
 from keras_applications.mobilenet import relu6
 from keras.utils.generic_utils import CustomObjectScope
 
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(PROJECT_PATH)
 from engine.logger import TFLogger
 from engine.tools.filesystem_functions import count_folders, get_barcode_class
 
@@ -34,15 +37,14 @@ if args.previous_model == '':
 else:
     TRAIN_FROM_ZERO = False
 
-""" Define project path, data path and output path  """
-PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+""" Define data path and output path  """
 DATA_PATH = args.data_path
 OUTPUT_PATH = os.path.join(PROJECT_PATH, 'models', args.output_name)
 if os.path.exists(OUTPUT_PATH):
     raise "Model with name {} already exists.".format(args.output_name)
 
 """ Enable logging for Tensorboard """
-tf_logger = TFLogger(PROJECT_PATH, args.batch_size)
+tf_logger = TFLogger(PROJECT_PATH, args.output_name, args.batch_size)
 tf_logger.start()
 
 """ Define barcode class and underlying classes number from file structure """
@@ -108,7 +110,7 @@ valid_generator = valid_datagen.flow_from_directory(
 )
 
 """ Set train parameters for choosen model """
-sgd = optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+sgd = optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
 mod_model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
