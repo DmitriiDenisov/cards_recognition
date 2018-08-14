@@ -13,6 +13,8 @@ from keras.callbacks import ModelCheckpoint
 from keras.layers import DepthwiseConv2D
 from keras_applications.mobilenet import relu6
 from keras.utils.generic_utils import CustomObjectScope
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(PROJECT_PATH)
@@ -110,7 +112,7 @@ valid_generator = valid_datagen.flow_from_directory(
 )
 
 """ Set train parameters for choosen model """
-sgd = optimizers.SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
+sgd = optimizers.SGD(lr=0.05, decay=1e-6, momentum=0.9, nesterov=True)
 mod_model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
