@@ -1,6 +1,5 @@
 import os
 import argparse
-
 from engine.tools.make_consolidation_df import consolidation_df_for_predictions_with_all_metrics
 
 """ Initialize argument parser """

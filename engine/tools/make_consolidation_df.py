@@ -1,11 +1,8 @@
 import os
-
 import numpy as np
 import pandas as pd
 from pandas import ExcelWriter
-
 from engine.tools.select_best_threshold import count_TP_and_FP_for_df
-
 
 def consolidation_df_for_predictions(model, result_path, support_files_path):
     with open(os.path.join(support_files_path, 'cardnames.txt')) as f:
@@ -97,7 +94,40 @@ def consolidation_df_for_predictions_with_all_metrics(model, result_path, suppor
     df_results.loc[len(df_results)] = [''] * df_results.shape[1]
     df_results.loc[len(df_results)] = scores
 
-
     writer = ExcelWriter(os.path.join(result_path, 'consolidation_df_all_metrics_{}.xlsx'.format(model[:-3])))
     df_results.to_excel(writer, 'Sheet1')
     writer.save()
+
+def make_consolidation_for_errors(model, result_path, support_files_path):
+    # Read all needed files:
+    true_answers = pd.read_excel(os.path.join(support_files_path, 'true_answers.xlsx')).set_index('card_id')
+    PATH_CONSOLIDATION_DF = os.path.join( PROJECT_PATH, 'resource', barcode, 'results', 'consolidation_df_{}.xlsx'.format(model[:-3]) )
+    results = pd.read_excel(PATH_CONSOLIDATION_DF).set_index('Filename')
+    results = results[[results.columns[-1]]]
+    results.rename(columns={results.columns[-1]: 'Predictions'}, inplace=True)
+
+    # Concatenate predictions and true
+    df = pd.concat([results, true_answers], axis=1, join_axes=[results.index])
+    df['indicator'] = df['Predictions'] == df['true_type']
+
+    # Group by and aggregate true_type & indicator
+    count_in_test_of_types = df[['true_type', 'indicator']].groupby('true_type').agg(['count'])['indicator']['count']
+    count_in_test_of_types = count_in_test_of_types.to_dict()
+    consolidation_error_df = df[df['indicator'] == False].groupby(['true_type', 'Predictions']).agg('count').reset_index()
+    consolidation_error_df.rename(columns={'indicator': 'count'}, inplace=True)
+    consolidation_error_df['percentage'] = consolidation_error_df['count'] / consolidation_error_df['count'].sum()
+    consolidation_error_df['num_true_type_when_error'] = consolidation_error_df['true_type'].map(count_in_test_of_types)
+
+    # Write file
+    writer = ExcelWriter(os.path.join(result_path, 'consolidation_error_df.xlsx'))
+    consolidation_error_df.to_excel(writer, 'Sheet1', index=False)
+    writer.save()
+
+if __name__ == '__main__':
+    barcode = '_EAN_13'
+    PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    OUTPUT_PATH = os.path.join(PROJECT_PATH, 'resource', barcode, 'results')
+    SUPPORT_FILES_PATH = os.path.join(PROJECT_PATH, 'resource', barcode, 'support_files')
+
+    """ Calculate metrocs """
+    make_consolidation_for_errors('my_model_base.h5', OUTPUT_PATH, SUPPORT_FILES_PATH)

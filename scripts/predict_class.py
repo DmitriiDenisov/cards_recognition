@@ -2,6 +2,7 @@ import argparse
 import os
 
 import numpy as np
+import sys
 import pandas as pd
 import keras
 from keras.preprocessing import image
@@ -9,10 +10,13 @@ from keras import optimizers
 from keras.layers import DepthwiseConv2D
 from keras_applications.mobilenet import relu6
 from keras.utils.generic_utils import CustomObjectScope
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(PROJECT_PATH)
 
 from engine.tools.make_labels_csv import generate_labels_from_train
 from engine.tools.filesystem_functions import get_cardname, get_barcode_class
 from engine.tools.make_consolidation_df import consolidation_df_for_predictions
+
 
 """ Initialize argument parser """
 parser = argparse.ArgumentParser(description='Prediction script')

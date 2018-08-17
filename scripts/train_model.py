@@ -5,7 +5,7 @@ import argparse
 import keras
 from keras.applications import vgg16, inception_v3, resnet50, mobilenet
 from keras.preprocessing import image
-from keras.layers.core import Activation, Reshape
+from keras.layers.core import Activation, Reshape, Dense
 from keras.layers import Conv2D
 from keras.models import Model
 from keras import optimizers
@@ -20,6 +20,7 @@ PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(PROJECT_PATH)
 from engine.logger import TFLogger
 from engine.tools.filesystem_functions import count_folders, get_barcode_class
+from engine.tools.add_metrics import precision
 
 """ Initialize argument parser """
 parser = argparse.ArgumentParser(description='Model training script')
@@ -46,7 +47,9 @@ if os.path.exists(OUTPUT_PATH):
     raise "Model with name {} already exists.".format(args.output_name)
 
 """ Enable logging for Tensorboard """
-tf_logger = TFLogger(PROJECT_PATH, args.output_name, args.batch_size)
+tf_logger = TFLogger(PROJECT_PATH, args.output_name, args.batch_size, log_every=1, histogram_freq=0, write_graph=True,
+                       write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None,
+                       embeddings_metadata=None, embeddings_data=None)
 tf_logger.start()
 
 """ Define barcode class and underlying classes number from file structure """
@@ -55,17 +58,22 @@ BARCODE = get_barcode_class(args.data_path)
 
 """ Modify existing architecture for actual number of classes """
 if TRAIN_FROM_ZERO:
-    # vgg_model = vgg16.VGG16(weights='imagenet')
-    # inception_model = inception_v3.InceptionV3(weights='imagenet')
-    # resnet_model = resnet50.ResNet50(weights='imagenet')
+    #vgg_model = vgg16.VGG16(weights='imagenet')
+    #inception_model = inception_v3.InceptionV3(weights='imagenet')
+    #resnet_model = resnet50.ResNet50(weights='imagenet')
     mobilenet_model = mobilenet.MobileNet(weights='imagenet')
 
     mobilenet_model.summary()
     mobilenet_model.layers.pop()
     mobilenet_model.layers.pop()
     mobilenet_model.layers.pop()
+    #for layer in mobilenet_model.layers:
+    #    layer.trainable = False
+
     mobilenet_model.get_layer(name='reshape_1').name = 'reshape_0'
     o = Conv2D(filters=NUM_CLASSES, kernel_size=(1, 1))(mobilenet_model.layers[-1].output)
+    #o = Dense(2 * NUM_CLASSES, input_shape=(None, mobilenet_model.output_shape))(mobilenet_model.layers[-1].output)
+    #o = Dense(NUM_CLASSES, input_shape=(None, 2 * NUM_CLASSES))(mobilenet_model.layers[-1].output)
     o = Activation('softmax', name='loss')(o)
     o = Reshape((NUM_CLASSES,))(o)
 
@@ -111,26 +119,29 @@ valid_generator = valid_datagen.flow_from_directory(
     seed=42
 )
 
+
 """ Set train parameters for choosen model """
 sgd = optimizers.SGD(lr=0.05, decay=1e-6, momentum=0.9, nesterov=True)
 mod_model.compile(optimizer=sgd,
                   loss='categorical_crossentropy',
-                  metrics=['accuracy'])
+                  metrics=['accuracy', precision])
 
-STEP_SIZE_TRAIN = train_generator.n // train_generator.batch_size
-STEP_SIZE_VALID = valid_generator.n // valid_generator.batch_size
+STEP_SIZE_TRAIN = 5#(train_generator.n // train_generator.batch_size) // 100 # поменять!
+STEP_SIZE_VALID = 5#valid_generator.n // valid_generator.batch_size
 
 """ Training """
 checkpointer = ModelCheckpoint(OUTPUT_PATH, monitor='val_loss', verbose=0, save_best_only=False,
                                save_weights_only=False, mode='auto', period=1)
+
+
 history = mod_model.fit_generator(generator=train_generator,
                                   steps_per_epoch=STEP_SIZE_TRAIN,
                                   validation_data=valid_generator,
                                   validation_steps=STEP_SIZE_VALID,
-                                  epochs=10,
-                                  callbacks=[checkpointer, tf_logger.tbCallBack]
+                                  epochs=5,
+                                  callbacks=[checkpointer, tf_logger]
                                   )
 
 """ Save logged entries """
-tf_logger.save_local()
+#tf_logger.save_local()
 history.model.save(OUTPUT_PATH)
