@@ -1,1 +1,1 @@
-All information about the project is in J:\Projects\CardsMobile
+# Example of multiclassification task
